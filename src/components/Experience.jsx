@@ -19,6 +19,15 @@ const CURVE_AHEAD_AIRPLANE = 0.02;
 const AIRPLANE_MAX_ANGLE = 35;
 const FRICTION_DISTANCE = 42;
 
+// Reusable objects to avoid GC pressure in useFrame
+const tmpVec3A = new THREE.Vector3();
+const tmpVec3B = new THREE.Vector3();
+const tmpVec3C = new THREE.Vector3();
+const tmpVec3D = new THREE.Vector3();
+const tmpQuaternion = new THREE.Quaternion();
+const tmpEuler = new THREE.Euler();
+const tmpGroup = new Group();
+
 export const Experience = () => {
   const curvePoints = useMemo(
     () => [
@@ -41,50 +50,50 @@ export const Experience = () => {
     return new THREE.CatmullRomCurve3(curvePoints, false, "catmullrom", 0.5);
   }, []);
 
-  const textSections = useMemo(() => {
-  return [
-    {
-      cameraRailDist: -1,
-      position: new Vector3(
-        curvePoints[1].x - 3,
-        curvePoints[1].y,
-        curvePoints[1].z
-      ),
-      subtitle: `Welcome aboard Flight Unfor-3D! Fasten your seatbelt and prepare for takeoff.`,
-    },
-    {
-      cameraRailDist: 1.5,
-      position: new Vector3(
-        curvePoints[2].x + 2,
-        curvePoints[2].y,
-        curvePoints[2].z
-      ),
-      title: "Cruising Altitude",
-      subtitle: `Navigating the skies of 3D with Three.js, R3F, and GSAP. Where design meets technology — smoothly.`,
-    },
-    {
-      cameraRailDist: -1,
-      position: new Vector3(
-        curvePoints[3].x - 3,
-        curvePoints[3].y,
-        curvePoints[3].z
-      ),
-      title: "Turbulence-Free Precision",
-      subtitle: `Every pixel is calibrated. Every movement — engineered for visual flight control.`,
-    },
-    {
-      cameraRailDist: 1.5,
-      position: new Vector3(
-        curvePoints[4].x + 3.5,
-        curvePoints[4].y,
-        curvePoints[4].z - 12
-      ),
-      title: "Landing New Projects",
-      subtitle: `Ready for arrival at your next big idea? Let’s co-pilot your vision into a high-flying experience.`,
-    },
-  ];
-}, []);
-
+  const textSections = useMemo(
+    () => [
+      {
+        cameraRailDist: -1,
+        position: new Vector3(
+          curvePoints[1].x - 3,
+          curvePoints[1].y,
+          curvePoints[1].z
+        ),
+        subtitle: `Welcome aboard. Fasten your seatbelt and prepare for a flight through the endless sky.`,
+      },
+      {
+        cameraRailDist: 1.5,
+        position: new Vector3(
+          curvePoints[2].x + 2,
+          curvePoints[2].y,
+          curvePoints[2].z
+        ),
+        title: "Above the Clouds",
+        subtitle: `Soaring through layers of light — where the horizon stretches beyond what eyes can reach.`,
+      },
+      {
+        cameraRailDist: -1,
+        position: new Vector3(
+          curvePoints[3].x - 3,
+          curvePoints[3].y,
+          curvePoints[3].z
+        ),
+        title: "Limitless Horizons",
+        subtitle: `At cruising altitude, the world below fades away. Only the vast blue sky and silence remain.`,
+      },
+      {
+        cameraRailDist: 1.5,
+        position: new Vector3(
+          curvePoints[4].x + 3.5,
+          curvePoints[4].y,
+          curvePoints[4].z - 12
+        ),
+        title: "Final Approach",
+        subtitle: `Every great journey leads to a new beginning. The sky remembers all who dared to fly.`,
+      },
+    ],
+    []
+  );
 
   const clouds = useMemo(
     () => [
@@ -264,25 +273,24 @@ export const Experience = () => {
     const shape = new THREE.Shape();
     shape.moveTo(0, -0.08);
     shape.lineTo(0, 0.08);
-
     return shape;
-  }, [curve]);
+  }, []);
 
+  const airplane = useRef();
   const cameraGroup = useRef();
   const cameraRail = useRef();
   const camera = useRef();
   const scroll = useScroll();
   const lastScroll = useRef(0);
+  const endTriggered = useRef(false);
 
-  const { play, setHasScroll } = usePlay();
+  const { play, setHasScroll, setEnd } = usePlay();
 
   useFrame((_state, delta) => {
     if (window.innerWidth > window.innerHeight) {
-      // LANDSCAPE
       camera.current.fov = 30;
       camera.current.position.z = 5;
     } else {
-      // PORTRAIT
       camera.current.fov = 80;
       camera.current.position.z = 2;
     }
@@ -291,15 +299,13 @@ export const Experience = () => {
       setHasScroll(true);
     }
 
-    if (play&& sceneOpacity.current < 1) {
+    if (play && sceneOpacity.current < 1) {
       sceneOpacity.current = THREE.MathUtils.lerp(
         sceneOpacity.current,
         1,
         delta * 0.1
       );
-    }
-
-    if (sceneOpacity.current > 0) {
+    } else if (!play && sceneOpacity.current > 0) {
       sceneOpacity.current = THREE.MathUtils.lerp(
         sceneOpacity.current,
         0,
@@ -309,12 +315,16 @@ export const Experience = () => {
 
     lineMaterialRef.current.opacity = sceneOpacity.current;
 
-
     const scrollOffset = Math.max(0, scroll.offset);
+
+    if (scrollOffset > 0.95 && !endTriggered.current) {
+      endTriggered.current = true;
+      setEnd(true);
+    }
 
     let friction = 1;
     let resetCameraRail = true;
-    // LOOK TO CLOSE TEXT SECTIONS
+
     textSections.forEach((textSection) => {
       const distance = textSection.position.distanceTo(
         cameraGroup.current.position
@@ -322,27 +332,25 @@ export const Experience = () => {
 
       if (distance < FRICTION_DISTANCE) {
         friction = Math.max(distance / FRICTION_DISTANCE, 0.1);
-        const targetCameraRailPosition = new Vector3(
+        tmpVec3A.set(
           (1 - distance / FRICTION_DISTANCE) * textSection.cameraRailDist,
           0,
           0
         );
-        cameraRail.current.position.lerp(targetCameraRailPosition, delta);
+        cameraRail.current.position.lerp(tmpVec3A, delta);
         resetCameraRail = false;
       }
     });
     if (resetCameraRail) {
-      const targetCameraRailPosition = new Vector3(0, 0, 0);
-      cameraRail.current.position.lerp(targetCameraRailPosition, delta);
+      tmpVec3A.set(0, 0, 0);
+      cameraRail.current.position.lerp(tmpVec3A, delta);
     }
 
-    // CALCULATE LERPED SCROLL OFFSET
     let lerpedScrollOffset = THREE.MathUtils.lerp(
       lastScroll.current,
       scrollOffset,
       delta * friction
     );
-    // PROTECT BELOW 0 AND ABOVE 1
     lerpedScrollOffset = Math.min(lerpedScrollOffset, 1);
     lerpedScrollOffset = Math.max(lerpedScrollOffset, 0);
 
@@ -351,19 +359,14 @@ export const Experience = () => {
 
     const curPoint = curve.getPoint(lerpedScrollOffset);
 
-    // Follow the curve points
     cameraGroup.current.position.lerp(curPoint, delta * 24);
-
-    // Make the group look ahead on the curve
 
     const lookAtPoint = curve.getPoint(
       Math.min(lerpedScrollOffset + CURVE_AHEAD_CAMERA, 1)
     );
 
-    const currentLookAt = cameraGroup.current.getWorldDirection(
-      new THREE.Vector3()
-    );
-    const targetLookAt = new THREE.Vector3()
+    const currentLookAt = cameraGroup.current.getWorldDirection(tmpVec3B);
+    const targetLookAt = tmpVec3C
       .subVectors(curPoint, lookAtPoint)
       .normalize();
 
@@ -373,25 +376,21 @@ export const Experience = () => {
     );
 
     // Airplane rotation
-
-    const tangent = curve.getTangent(lerpedScrollOffset + CURVE_AHEAD_AIRPLANE);
-
-    const nonLerpLookAt = new Group();
-    nonLerpLookAt.position.copy(curPoint);
-    nonLerpLookAt.lookAt(nonLerpLookAt.position.clone().add(targetLookAt));
-
-    tangent.applyAxisAngle(
-      new THREE.Vector3(0, 1, 0),
-      -nonLerpLookAt.rotation.y
+    const tangent = curve.getTangent(
+      lerpedScrollOffset + CURVE_AHEAD_AIRPLANE
     );
+
+    tmpGroup.position.copy(curPoint);
+    tmpGroup.lookAt(tmpGroup.position.clone().add(targetLookAt));
+
+    tangent.applyAxisAngle(tmpVec3D.set(0, 1, 0), -tmpGroup.rotation.y);
 
     let angle = Math.atan2(-tangent.z, tangent.x);
     angle = -Math.PI / 2 + angle;
 
     let angleDegrees = (angle * 180) / Math.PI;
-    angleDegrees *= 2.4; // stronger angle
+    angleDegrees *= 2.4;
 
-    // LIMIT PLANE ANGLE
     if (angleDegrees < 0) {
       angleDegrees = Math.max(angleDegrees, -AIRPLANE_MAX_ANGLE);
     }
@@ -399,91 +398,59 @@ export const Experience = () => {
       angleDegrees = Math.min(angleDegrees, AIRPLANE_MAX_ANGLE);
     }
 
-    // SET BACK ANGLE
     angle = (angleDegrees * Math.PI) / 180;
 
-    const targetAirplaneQuaternion = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(
-        airplane.current.rotation.x,
-        airplane.current.rotation.y,
-        angle
-      )
+    tmpEuler.set(
+      airplane.current.rotation.x,
+      airplane.current.rotation.y,
+      angle
     );
-    airplane.current.quaternion.slerp(targetAirplaneQuaternion, delta * 2);
-
+    tmpQuaternion.setFromEuler(tmpEuler);
+    airplane.current.quaternion.slerp(tmpQuaternion, delta * 2);
   });
-
-  const airplane = useRef();
 
   const tl = useRef();
-const backgroundColors = useRef({
-  colorA: "#001f3f",  // Deep blue sky at night
-  colorB: "#0074D9",  // Twilight blue
-});
-
-const planeInTl = useRef();
-const planeOutTl = useRef();
-
-useLayoutEffect(() => {
-  tl.current = gsap.timeline();
-
-  // 1. Sunrise – iliq va yorqin
-  tl.current.to(backgroundColors.current, {
-    duration: 1,
-    colorA: "#ff5e62", // Sunrise red
-    colorB: "#ff9966", // Orange gradient
+  const backgroundColors = useRef({
+    colorA: "#1a2a4a",
+    colorB: "#3b6b9e",
   });
 
-  // 2. Clear sky – pokiza havo
-  tl.current.to(backgroundColors.current, {
-    duration: 1,
-    colorA: "#00c6ff", // Light cyan blue
-    colorB: "#0072ff", // Sky blue
-  });
+  const planeInTl = useRef();
 
-  // 3. Sunset – sokin parvoz ohanglari
-  tl.current.to(backgroundColors.current, {
-    duration: 1,
-    colorA: "#001f3f",  // Deep blue sky at night
-    colorB: "#0074D9", // Orange-red
-  });
+  useLayoutEffect(() => {
+    tl.current = gsap.timeline();
 
-  tl.current.pause();
+    // 1. Twilight to golden sunrise
+    tl.current.to(backgroundColors.current, {
+      duration: 1,
+      colorA: "#e8836b",
+      colorB: "#f5c77e",
+    });
 
-  planeInTl.current = gsap.timeline();
-  planeInTl.current.pause();
-  planeInTl.current.from(airplane.current.position, {
-    duration: 3,
-    z: 5,
-    y: -2,
-  });
+    // 2. Clear bright daytime sky
+    tl.current.to(backgroundColors.current, {
+      duration: 1,
+      colorA: "#4a9eed",
+      colorB: "#b8ddf7",
+    });
 
-  planeOutTl.current = gsap.timeline();
-  planeOutTl.current.pause();
+    // 3. Soft evening twilight
+    tl.current.to(backgroundColors.current, {
+      duration: 1,
+      colorA: "#1e3a5f",
+      colorB: "#4a7fb5",
+    });
 
-  planeOutTl.current.to(
-    airplane.current.position,
-    {
-      duration: 10,
-      z: -250,
-      y: 10,
-    },
-    0
-  );
-  planeOutTl.current.to(
-    cameraRail.current.position,
-    {
-      duration: 8,
-      y: 12,
-    },
-    0
-  );
-  planeOutTl.current.to(airplane.current.position, {
-    duration: 1,
-    z: -1000,
-  });
-}, []);
+    tl.current.pause();
 
+    planeInTl.current = gsap.timeline();
+    planeInTl.current.pause();
+    planeInTl.current.from(airplane.current.position, {
+      duration: 3,
+      z: 5,
+      y: -2,
+    });
+  }, []);
 
   useEffect(() => {
     if (play) {
@@ -553,22 +520,3 @@ useLayoutEffect(() => {
     []
   );
 };
-
-/**
- * Music toggle button
- */
-const audio = document.getElementById('backgroundMusic')
-const musicButton = document.getElementById('musicButton')
-let isPlaying = false
-
-musicButton.addEventListener('click', () => {
-    if (!isPlaying) {
-        audio.play()
-        musicButton.textContent = 'Pause'
-        isPlaying = true
-    } else {
-        audio.pause()
-        musicButton.textContent = 'Play'
-        isPlaying = false
-    }
-})

@@ -1,4 +1,22 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter&display=swap");
+@font-face {
+  font-family: "DM Serif Display";
+  src: url("/fonts/DMSerifDisplay-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 #root {
   width: 100vw;
@@ -7,48 +25,100 @@
 
 body {
   margin: 0;
+  overflow: hidden;
+  background: #1a2a4a;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(78, 160, 240, 0.3);
+  color: white;
 }
 
 ::-webkit-scrollbar {
   width: 2px;
 }
 
-/* TRACK */
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.23);
+  background: transparent;
 }
 
-/* HANDLE */
 ::-webkit-scrollbar-thumb {
-  background: white;
-  height: 10%;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
 }
+
+/* ============================================
+   OVERLAY
+   ============================================ */
 
 .overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
+  inset: 0;
 }
 
 .overlay--disable {
   pointer-events: none;
 }
 
+/* ============================================
+   LOADER - Airplane themed
+   ============================================ */
+
 .loader {
   position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  background: white;
+  inset: 0;
+  background: linear-gradient(180deg, #0f1b2e 0%, #1a2a4a 40%, #2c4a6e 100%);
   transition: opacity 2s ease-in-out;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .loader--disappear {
   opacity: 0;
+  pointer-events: none;
 }
+
+.loader__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.loader__plane {
+  animation: loaderFloat 2s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+.loader__bar {
+  width: 180px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.loader__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a9eed, #7ec4f8);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.loader__text {
+  font-family: "Inter", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.3rem;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ============================================
+   INTRO SCREEN
+   ============================================ */
 
 .intro {
   display: flex;
@@ -56,192 +126,328 @@ body {
   align-items: center;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .logo {
   font-family: "DM Serif Display", serif;
   color: white;
-  font-size: 8rem;
-  letter-spacing: 0.5rem;
-  padding: 0;
+  font-size: 5.5rem;
+  letter-spacing: 0.8rem;
   margin: 0;
+  font-weight: 400;
   transform: translateY(-50%);
   position: absolute;
   top: 50vh;
-  animation: fadeUp 2.4s ease-in-out;
-  transition: all 2s ease-in-out;
+  animation: logoEnter 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 2s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1;
+}
+
+.logo__accent {
+  background: linear-gradient(135deg, #6db3f2 0%, #a8d8f8 50%, #d4ecfc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .intro--disappear .logo {
-  top: 42px;
-  transform: scale(0.25);
+  top: 36px;
+  transform: scale(0.18);
   transform-origin: center top;
+  opacity: 0.7;
 }
 
 .intro__scroll {
   opacity: 0;
-  color: white;
+  color: rgba(255, 255, 255, 0.35);
   font-family: "Inter", sans-serif;
-  font-size: 1rem;
-  letter-spacing: 0.05rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.25rem;
+  text-transform: uppercase;
   position: absolute;
-  top: 24vh;
+  top: 22vh;
 }
 
 .intro--disappear .intro__scroll {
-  animation: fadeIn 1s ease-in-out 1.5s forwards;
+  animation: fadeIn 1s ease-in-out 1.8s forwards;
 }
 
 .overlay--scrolled .intro__scroll {
-  animation: fadeOut 1s ease-in-out forwards;
+  animation: fadeOut 0.8s ease-in-out forwards;
 }
 
+/* TAKE OFF BUTTON */
 .explore {
-  padding: 1rem 2rem;
-  border: none;
-  font-family: "DM Serif Display", serif;
-  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: "Inter", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
   letter-spacing: 0.25rem;
-  color: #3535cc;
-  border-radius: 32px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(74, 158, 237, 0.1);
+  border-radius: 100px;
   cursor: pointer;
-  display: inline-block;
-  margin-top: 320px;
-  display: inline-block;
+  margin-top: 340px;
   position: relative;
   z-index: 1;
-  overflow: hidden;
-  transition: 0.42s ease-in-out;
-  animation: fadeIn 2.4s ease-in-out 2s forwards;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeIn 2s ease-in-out 2s forwards;
   opacity: 0;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.explore__icon {
+  display: flex;
+  align-items: center;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .explore:hover {
+  background: rgba(74, 158, 237, 0.2);
+  border-color: rgba(74, 158, 237, 0.4);
+  box-shadow: 0 0 40px rgba(74, 158, 237, 0.12);
+  transform: translateY(-2px);
   color: white;
 }
 
-.explore:hover:before {
-  width: 200%;
-  height: 300%;
-  border-radius: 100%;
+.explore:hover .explore__icon {
+  transform: translateY(-2px);
 }
 
-.explore:before {
-  content: "";
-  background: #3595cc;
-  position: absolute;
-  width: 0%;
-  bottom: 0;
-  left: 50%;
-  height: 0%;
-  transition: 0.42s ease-in-out;
-  z-index: -1;
-  transform: translateX(-50%) translateY(50%);
+.explore:active {
+  transform: translateY(0);
 }
 
 .intro--disappear .explore {
-  animation: fadeOut 1s ease-in-out forwards;
+  animation: fadeOut 0.5s ease-in-out forwards;
 }
 
-.outro {
+/* ============================================
+   ENDING SCREEN
+   ============================================ */
+
+.ending {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 4s ease-in-out;
+  transition: opacity 3s ease-in-out;
+  pointer-events: none;
+  z-index: 50;
+  background: radial-gradient(ellipse at center, rgba(15, 25, 50, 0.4) 0%, rgba(10, 18, 35, 0.7) 100%);
 }
 
-.outro--appear {
+.ending--appear {
   opacity: 1;
+  pointer-events: all;
 }
 
-.outro__text {
-  font-family: "Inter", sans-serif;
-  font-size: 1.5rem;
+.ending__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem;
+}
+
+.ending__icon {
+  opacity: 0.6;
+  animation: endingFloat 3s ease-in-out infinite;
+}
+
+.ending__line {
+  width: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.ending__title {
+  font-family: "DM Serif Display", serif;
+  font-size: 2.8rem;
   color: white;
+  font-weight: 400;
+  letter-spacing: 0.02rem;
+  text-align: center;
+  line-height: 1.2;
 }
 
-#musicButton {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10;
-    padding: 10px 16px;
-    border: 2px solid rgba(0, 200, 255, 0.531);
-    background: rgba(29, 97, 186, 0.276);
-    color: rgb(210, 210, 224);
-    font-size: 14px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-family: "Nunito Sans", sans-serif; 
+.ending__accent {
+  background: linear-gradient(135deg, #6db3f2 0%, #a8d8f8 50%, #d4ecfc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-#musicButton:hover {
-    background-color: transparent;
+.ending__subtitle {
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.8;
+  text-align: center;
+  max-width: 360px;
+  letter-spacing: 0.02rem;
 }
 
-/* RESPONSIVE */
+.ending__credit {
+  font-family: "Inter", sans-serif;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.15rem;
+  text-transform: uppercase;
+  margin-top: 1rem;
+}
+
+/* ============================================
+   MUSIC BUTTON
+   ============================================ */
+
+.music-btn {
+  position: absolute;
+  top: 22px;
+  right: 22px;
+  z-index: 200;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(20, 35, 60, 0.5);
+  color: rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  pointer-events: all;
+}
+
+.music-btn:hover {
+  background: rgba(74, 158, 237, 0.12);
+  border-color: rgba(74, 158, 237, 0.25);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.music-btn--playing {
+  border-color: rgba(74, 158, 237, 0.2);
+  animation: musicPulse 3s ease-in-out infinite;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 
 @media screen and (max-width: 768px) {
   .logo {
-    font-size: 3rem;
-    letter-spacing: 0.25rem;
+    font-size: 2.8rem;
+    letter-spacing: 0.35rem;
   }
 
   .intro--disappear .logo {
-    top: 24px;
-    transform: scale(0.5);
-    transform-origin: center top;
+    top: 16px;
+    transform: scale(0.35);
   }
 
-  .outro__text {
-    font-size: 1rem;
+  .explore {
+    font-size: 0.72rem;
+    padding: 0.75rem 1.6rem;
+    margin-top: 280px;
+  }
+
+  .intro__scroll {
+    font-size: 0.6rem;
+  }
+
+  .ending__title {
+    font-size: 1.8rem;
+  }
+
+  .ending__subtitle {
+    font-size: 0.75rem;
+    padding: 0 1rem;
   }
 }
 
-/* ANIMATIONS */
+@media screen and (max-width: 480px) {
+  .logo {
+    font-size: 1.8rem;
+    letter-spacing: 0.2rem;
+  }
+
+  .explore {
+    margin-top: 240px;
+  }
+
+  .ending__title {
+    font-size: 1.4rem;
+  }
+
+  .ending__content {
+    padding: 2rem;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes logoEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(50px);
+    filter: blur(16px);
+  }
+  50% {
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
+}
 
 @keyframes fadeUp {
   0% {
     opacity: 0;
-    transform: translateY(100px);
-    filter: blur(9px);
+    transform: translateY(24px);
   }
-
   100% {
     opacity: 1;
-    filter: none;
+    transform: translateY(0);
   }
 }
 
 @keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-
-  100% {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes fadeOut {
-  0% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-  }
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
-@keyframes rotate {
-  100% {
-    transform: rotate(360deg);
-  }
+@keyframes loaderFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
+
+@keyframes musicPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 158, 237, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(74, 158, 237, 0.15); }
+}
+
+@keyframes endingFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(3deg); }
+}
+
